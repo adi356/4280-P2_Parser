@@ -52,7 +52,7 @@ NodeT* Parser::program() {
         node->c2 = stats(); // Parse <stats>
 
         // Check for xclose keyword
-        if (tk.id == KW_tk && keyword_map[tk.value] == "xclose") {
+        if (tk.id == KW_tk && keyword_map[tk.value] == "closeTk") {
             nextScan(); // Move to the next token after xclose
             return node; // Return the parsed <program> node
         } else {
@@ -90,7 +90,7 @@ NodeT* Parser::vars() {
     exit(EXIT_FAILURE);
 }
 
-// <varList> -> identifier : integer ; | identifier : integer <varList>
+// <varList> -> identifier : integer <Y>
 NodeT* Parser::varList() {
     NodeT* node = createNode("<varList>");
 
@@ -108,50 +108,78 @@ NodeT* Parser::varList() {
                 node->tokens.push_back(tk);
                 nextScan();
 
-                // Check for semicolon token
-                if ((tk.id == OP_tk) && (operator_map[tk.value] == "semiColonTk")) {
-                    nextScan();
-
-                    // Recursive call to handle the rest of varList
-                    node->c1 = varList();
-                } else {
-                    expectedToken.assign(";");
-                    parserError();
-                }
+                //proceed to Y
+                node->c1 = Y();
+                return node;
             } else {
                 expectedToken.assign("INTEGER");
-                parserError();
+                parserError()
             }
         } else {
             expectedToken.assign(":");
             parserError();
         }
     } else {
-        node->tokens.push_back(EMPTY_tk); // If no identifier, signifies an empty varList
-        return node;
+        expectedToken.assign("IDENTIFIER");
+        parserError();
     }
 
-    // Handle errors or return node
-    exit(EXIT_FAILURE); // Adjust this based on error handling strategy
+    exit(EXIT_FAILURE);
+}
+
+// <Y> -> ; | <varList>
+NodeT* Parser::Y() {
+    NodeT* node = createNode("<Y>");
+
+    //check for semicolon 
+    if ((tk.id == OP_tk) && (operator_map[tk.value] == "semiColonTk")) {
+        nextScan();
+        return node;
+    } else {
+        //recursive call to handle <varList>
+        node->c1 = varList();
+        return node
+    }
+    exit(EXIT_FAILURE);
 
 }
 
-// <exp> -> <M> / <exp> | <M> * <exp> | <M>
+// <exp> -> <M> <X>
 NodeT* Parser::exp() {
     NodeT* node = createNode("<exp>");
 
     node->c1 = M();
+    node->c2 = X();
 
-    if ((tk.id == OP_tk) && (operator_map[tk.value] == "divideTk" || operator_map[tk.value] == "multiplyTk")) {
-        node->tokens.push_back(tk); // Store the operator
-        nextScan();
-        node->c2 = exp(); // Process the next expression recursively
-    } else if (tk.id != OP_tk || (operator_map[tk.value] != "divideTk" && operator_map[tk.value] != "multiplyTk")) {
-        // This block handles cases where the next token doesn't match expected operators
+    //check for unexpected token after parsing (might need to remove) 
+    if (tk.id != OP_tk || (operator_map[tk.value] != "divideTk" && operator_map[tk.value] != "multiplyTk")) {
         expectedToken.assign("/ or *");
         parserError();
         exit(EXIT_FAILURE);
     }
+
+    return node;
+}
+
+// <X> -> / <exp> | * <exp> | empty
+NodeT* Parser::X() {
+    NodeT* node = createNode("<X>");
+
+    //check for division or multiplication operators
+    if ((tk.id == OP_tk) && (operator_map[tk.value] == "divideTk" || operator_map[tk.value] == "multiplyTk")) {
+        node->tokens.push_back(tk); //store operator
+        nextScan();
+        node->c1 = exp(); //process recursively
+    } else {
+        node->tokens.push_back(EMPTY_tk); //if no operator have empty X
+    }
+    //check for unexpected token after processing <X> might need to remove
+    if (tk.id != OP_tk || (operator_map[tk.value] != "divideTk" && operator_map[tk.value] != "multiplyTk")) {
+        expectedToken.assign("/ or *");
+        parserError();
+        exit(EXIT_FAILURE);
+    }
+
     return node;
 }
 
@@ -170,6 +198,28 @@ NodeT* Parser::M() {
     }
     return node;
 }
+
+NodeT* Parser::Z() {
+    NodeT* node = createNode("<Z>");
+
+    // check for addition operator
+    if ((tk.id == OP_tk) && (operator_map[tk.value] == "plusTk")) {
+        node->tokens.push_back(tk); 
+        nextScan();
+
+        node->c1 = M()
+    } else {
+        node->tokens.push_back(EMPTY_tk);
+
+        if (tk.id != EOF_tk && (tk.id != KW_tk || keyword_map[tk.value] != "closeTk")) {
+            expectedToken.assign("+ or empty");
+            parserError();
+        }
+        return node;
+    }
+    return node;
+}
+
 
 // <N> -> <R> - <N> | ~<N> | <R>
 NodeT* Parser::N() {

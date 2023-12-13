@@ -7,9 +7,12 @@
 ### BNF
 <program> -> <vars> xopen <stats> xclose
 <vars>    -> empty | xdata <varList>
-<varList> -> identifier : integer ; | identifier : integer <varList>
-<exp>     -> <M> / <exp> | <M> * <exp> | <M>
-<M>       -> <N> + <M> | <N>
+<varList> -> identifier : integer <Y>
+<Y>       -> ; | <varList>
+<exp>     -> <M> <X>
+<X>       -> / <exp> | * <exp> | empty
+<M>       -> <N> <Z>
+<Z>       -> + <M> | empty
 <N>       -> <R> - <N> | ~<N> | <R>
 <R>       -> ( <exp> ) | identifier | integer
 <stats>   -> <stat> <mStat>

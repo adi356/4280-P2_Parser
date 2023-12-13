@@ -34,8 +34,11 @@ class Parser: public Scanner {
         NodeT *program();
         NodeT *vars();
         NodeT *varList();
+        NodeT *Y();
         NodeT *exp();
+        NodeT *X();
         NodeT *M();
+        NodeT *Z();
         NodeT *N();
         NodeT *R();
         NodeT *stats();
