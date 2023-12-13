@@ -1,3 +1,0 @@
-xopen 
-  xout << 1 ;
-xclose

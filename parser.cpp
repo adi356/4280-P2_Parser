@@ -3,9 +3,12 @@
 /* BNF Grammer
 <program> -> <vars> xopen <stats> xclose
 <vars>    -> empty | xdata <varList>
-<varList> -> identifier : integer ; | identifier : integer <varList>
-<exp>     -> <M> / <exp> | <M> * <exp> | <M>
-<M>       -> <N> + <M> | <N>
+<varList> -> identifier : integer <Y>
+<Y>       -> ; | <varList>
+<exp>     -> <M> <X>
+<X>       -> / <exp> | * <exp> | empty
+<M>       -> <N> <Z>
+<Z>       -> + <M> | empty
 <N>       -> <R> - <N> | ~<N> | <R>
 <R>       -> ( <exp> ) | identifier | integer
 <stats>   -> <stat> <mStat>
@@ -58,27 +61,25 @@ NodeT* Parser::program() {
         } else {
             expectedToken.assign("xclose");
             parserError();
-            exit(EXIT_FAILURE);
         }
     } else {
         expectedToken.assign("xopen");
         parserError();
-        exit(EXIT_FAILURE);
     }
+    return node;
 }
 
 // <vars> -> empty | xdata <varList>
 NodeT* Parser::vars() {
     NodeT* node = createNode("<vars>");
 
-    if ((tk.id == KW_tk) && (keyword_map[tk.value] == "xdata")) {
+    if ((tk.id == KW_tk) && (keyword_map[tk.value] == "dataTk")) {
         nextScan();
 
         //check if IDtk
         if (tk.id == IDENT_tk) {
-            node -> tokens.push_back(tk);
-            nextScan();
             node->c1 = varList();
+            return node;
         } else {
             expectedToken.assign("IDENTIFIER");
             parserError();
@@ -113,7 +114,7 @@ NodeT* Parser::varList() {
                 return node;
             } else {
                 expectedToken.assign("INTEGER");
-                parserError()
+                parserError();
             }
         } else {
             expectedToken.assign(":");
@@ -138,7 +139,7 @@ NodeT* Parser::Y() {
     } else {
         //recursive call to handle <varList>
         node->c1 = varList();
-        return node
+        return node;
     }
     exit(EXIT_FAILURE);
 
@@ -150,13 +151,6 @@ NodeT* Parser::exp() {
 
     node->c1 = M();
     node->c2 = X();
-
-    //check for unexpected token after parsing (might need to remove) 
-    if (tk.id != OP_tk || (operator_map[tk.value] != "divideTk" && operator_map[tk.value] != "multiplyTk")) {
-        expectedToken.assign("/ or *");
-        parserError();
-        exit(EXIT_FAILURE);
-    }
 
     return node;
 }
@@ -173,32 +167,20 @@ NodeT* Parser::X() {
     } else {
         node->tokens.push_back(EMPTY_tk); //if no operator have empty X
     }
-    //check for unexpected token after processing <X> might need to remove
-    if (tk.id != OP_tk || (operator_map[tk.value] != "divideTk" && operator_map[tk.value] != "multiplyTk")) {
-        expectedToken.assign("/ or *");
-        parserError();
-        exit(EXIT_FAILURE);
-    }
-
     return node;
 }
 
-// <M> -> <N> + <M> | <N>
+// <M> -> <N> <Z>
 NodeT* Parser::M() {
     NodeT* node = createNode("<M>");
 
-    node->c1 = N(); // Process <N>
+    node->c1 = N();
+    node->c2 = Z();
 
-    // Check for the addition operator
-    if ((tk.id == OP_tk) && (operator_map[tk.value] == "plusTk")) {
-        node->tokens.push_back(tk); // Store the addition operator
-        nextScan();
-
-        node->c2 = M(); // Recursively process additional M() expressions
-    }
     return node;
 }
 
+// <Z> -> + <M> | empty
 NodeT* Parser::Z() {
     NodeT* node = createNode("<Z>");
 
@@ -207,15 +189,9 @@ NodeT* Parser::Z() {
         node->tokens.push_back(tk); 
         nextScan();
 
-        node->c1 = M()
+        node->c1 = M();
     } else {
         node->tokens.push_back(EMPTY_tk);
-
-        if (tk.id != EOF_tk && (tk.id != KW_tk || keyword_map[tk.value] != "closeTk")) {
-            expectedToken.assign("+ or empty");
-            parserError();
-        }
-        return node;
     }
     return node;
 }
@@ -256,17 +232,21 @@ NodeT* Parser::R() {
         } else {
             expectedToken.assign(")");
             parserError();
-            exit(EXIT_FAILURE);
         }
-    } else if (tk.id == IDENT_tk || tk.id == NUM_tk) {
+    //check if IDtk
+    } else if (tk.id == IDENT_tk) {
+        node->tokens.push_back(tk);
+        nextScan();
+        return node;
+    } else if (tk.id == NUM_tk) {
         node->tokens.push_back(tk);
         nextScan();
         return node;
     } else {
         expectedToken.assign("( or Identifier or Integer");
         parserError();
-        exit(EXIT_FAILURE);
     }
+    exit(EXIT_FAILURE);
 }
 
 // <stats> -> <stat> <mStat>
@@ -602,7 +582,7 @@ NodeT* Parser::parse() {
 
 //print error message with line number
 void Parser::parserError() {
-    cout << "[ERROR] parsing error at " << scanner.getScannerPosition() << "-> expeected ["
+    cout << "[ERROR] parsing error at " << scanner.getScannerPosition() << "-> expected ["
     << expectedToken << "] but received [" << tk.value << "]" << endl;
     file.close();
     exit(EXIT_FAILURE);
