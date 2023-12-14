@@ -450,7 +450,8 @@ NodeT* Parser::ifxcond() {
    if ((tk.id == KW_tk) && (keyword_map[tk.value] == "condTk")) {
         nextScan(); // Move to the next token after 'xcond'
 
-        if (tk.value == "[") {
+        //if (tk.value == "[") {
+        if ((tk.id == OP_tk) && (operator_map[tk.value] == "leftBracketTk")) {
             nextScan(); // Move past '['
             node->c1 = exp(); // Parse the first expression
 
@@ -458,7 +459,7 @@ NodeT* Parser::ifxcond() {
 
             node->c3 = exp(); // Parse the second expression
 
-            if (tk.value == "]") {
+            if ((tk.id == OP_tk) && (operator_map[tk.value] == "rightBracketTk")) {
                 nextScan(); // Move past ']'
 
                 node->c4 = stat(); // Parse the statement inside if
@@ -479,6 +480,7 @@ NodeT* Parser::ifxcond() {
 
     exit(EXIT_FAILURE); 
 }
+        
 
 // <loop> -> xloop [<exp> <RO> <exp>] <stat>
 NodeT* Parser::loop() {
@@ -487,7 +489,7 @@ NodeT* Parser::loop() {
     if ((tk.id == KW_tk) && (keyword_map[tk.value] == "loopTk")) {
         nextScan(); // Move to the next token after 'xloop'
 
-        if (tk.value == "[") {
+        if ((tk.id = OP_tk) && (operator_map[tk.value] == "leftBracketTk")) {
             nextScan(); // Move past '['
             node->c1 = exp(); // Parse the first expression
 
@@ -495,7 +497,7 @@ NodeT* Parser::loop() {
 
             node->c3 = exp(); // Parse the second expression
 
-            if (tk.value == "]") {
+            if ((tk.id = OP_tk) && (operator_map[tk.value] == "rightBracketTk")) {
                 nextScan(); // Move past ']'
 
                 node->c4 = stat(); // Parse the statement inside loop
