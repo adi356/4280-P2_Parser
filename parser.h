@@ -40,6 +40,7 @@ class Parser: public Scanner {
         NodeT *M();
         NodeT *Z();
         NodeT *N();
+        NodeT *NN();
         NodeT *R();
         NodeT *stats();
         NodeT *mStat();

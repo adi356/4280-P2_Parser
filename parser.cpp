@@ -9,7 +9,8 @@
 <X>       -> / <exp> | * <exp> | empty
 <M>       -> <N> <Z>
 <Z>       -> + <M> | empty
-<N>       -> <R> - <N> | ~<N> | <R>
+<N>       -> <R> <NN>
+<NN>      -> - <N> | ~ <N> | empty
 <R>       -> ( <exp> ) | identifier | integer
 <stats>   -> <stat> <mStat>
 <mStat>   -> empty | <stat> <mStat>
@@ -197,23 +198,30 @@ NodeT* Parser::Z() {
 }
 
 
-// <N> -> <R> - <N> | ~<N> | <R>
+// <N> -> <R> <NN>
 NodeT* Parser::N() {
     NodeT* node = createNode("<N>");
 
+    node->c1 = R();
+    node->c2 = NN();
+
+    return node;
+}
+
+// <NN> -> - <N> | ~ <N> | empty
+NodeT* Parser::NN() {
+    NodeT* node = createNode("<NN>");
+
     if ((tk.id == OP_tk) && (operator_map[tk.value] == "minusTk")) {
-        node->tokens.push_back(tk); // Store the subtraction operator
+        node->tokens.push_back(tk);
         nextScan();
-
-        node->c1 = R();
-        node->c2 = N();
+        node->c1 = N();
     } else if ((tk.id == OP_tk) && (operator_map[tk.value] == "negateTk")) {
-        node->tokens.push_back(tk); // Store the negation operator
+        node->tokens.push_back(tk);
         nextScan();
-
         node->c1 = N();
     } else {
-        node->c1 = R(); // If none of the above, handle as a <R> expression
+        node->tokens.push_back(EMPTY_tk);
     }
     return node;
 }
@@ -262,7 +270,7 @@ NodeT* Parser::stats() {
 // <mStat> -> empty | <stat> <mStat>
 NodeT* Parser::mStat() {
     NodeT* node = createNode("<mStat>");
-
+    // // COMMITED CODE
     // Check if the current token indicates the end of statements
     if (tk.id != KW_tk || (keyword_map[tk.value] != "closeTk")) {
         node->c1 = stat(); // Process the current statement
@@ -277,39 +285,64 @@ NodeT* Parser::mStat() {
     expectedToken.assign("Statement or end of block (closeTk)");
     parserError();
     exit(EXIT_FAILURE);
-    
+
 }
 
 // <stat> -> <in> | <out> | <block> | <if> | <loop> | <assign>
 NodeT* Parser::stat() {
     NodeT* node = createNode("<stat>");
 
-    // Determine which type of statement it is
+    //COMMITED CODE
+    // // Determine which type of statement it is
+    // if (tk.id == KW_tk) {
+    //     if (keyword_map[tk.value] == "inTk") {
+    //         node->c1 = in();
+    //     } else if (keyword_map[tk.value] == "outTk") {
+    //         node->c1 = out();
+    //     } else if (keyword_map[tk.value] == "condTk") {
+    //         node->c1 = ifxcond();
+    //     } else if (keyword_map[tk.value] == "loopTk") {
+    //         node->c1 = loop();
+    //     } else if (keyword_map[tk.value] == "letTk") {
+    //         node->c1 = assign();
+    //     } else if (keyword_map[tk.value] == "openCurlyTk") {
+    //         node->c1 = block();
+    //     } else {
+    //         expectedToken.assign("Statement");
+    //         parserError();
+    //         exit(EXIT_FAILURE);
+    //     }
+    // } else {
+    //     expectedToken.assign("Statement");
+    //     parserError();
+    //     exit(EXIT_FAILURE);
+    // }
+    
+    // return node;
     if (tk.id == KW_tk) {
-        if (keyword_map[tk.value] == "inTk") {
-            node->c1 = in();
-        } else if (keyword_map[tk.value] == "outTk") {
-            node->c1 = out();
-        } else if (keyword_map[tk.value] == "condTk") {
-            node->c1 = ifxcond();
-        } else if (keyword_map[tk.value] == "loopTk") {
-            node->c1 = loop();
-        } else if (keyword_map[tk.value] == "letTk") {
-            node->c1 = assign();
-        } else if (keyword_map[tk.value] == "openCurlyTk") {
-            node->c1 = block();
+            if (tk.data == "xin") {
+                node->c1 = in();
+            } else if (tk.data == "xout") {
+                node->c1 = out();
+            } else if (tk.data == "xcond") {
+                node->c1 = ifxcond();
+            } else if (tk.data == "xlet") {
+                node->c1 = assign();
+            } else if (tk.data == "xloop") {
+                node->c1 = loop();
+            } else if (tk.data == "{") {
+                node->c1 = block();
+            } else {
+                expectedToken.assign("statement");
+                parserError();
+                exit(EXIT_FAILURE);
+            }
         } else {
-            expectedToken.assign("Statement");
+            expectedToken.assign("Staaatement");
             parserError();
             exit(EXIT_FAILURE);
         }
-    } else {
-        expectedToken.assign("Statement");
-        parserError();
-        exit(EXIT_FAILURE);
-    }
-    
-    return node;
+        return node;
 }
 
 // <block> -> {<vars> <stats>}
@@ -488,20 +521,50 @@ NodeT* Parser::loop() {
 NodeT* Parser::assign() {
     NodeT* node = createNode("<assign>");
 
-    //check for xlet
+    //COMMITED CODE
+    // //check for xlet
+    // if ((tk.id == KW_tk) && (keyword_map[tk.value] == "letTk")) {
+    //     nextScan();
+    //     //check for identifier
+    //     if (tk.id == IDENT_tk) {
+    //         node->tokens.push_back(tk); // Store the identifier token
+    //         nextScan();
+
+    //         if ((tk.id == OP_tk) && (operator_map[tk.value] == "equalTk")) {
+    //             nextScan();
+    //             node->c1 = exp(); // Parse the expression
+    //             return node;
+    //         } else {
+    //             expectedToken.assign("=");
+    //             parserError();
+    //         }
+    //     } else {
+    //         expectedToken.assign("IDENTIFIER");
+    //         parserError();
+    //     }
+    // } else {
+    //     expectedToken.assign("xlet");
+    //     parserError();
+    // }
+    // exit(EXIT_FAILURE);
+
+    // Check for xlet keyword
     if ((tk.id == KW_tk) && (keyword_map[tk.value] == "letTk")) {
         nextScan();
-        //check for identifier
+
+        // Check for identifier
         if (tk.id == IDENT_tk) {
             node->tokens.push_back(tk); // Store the identifier token
             nextScan();
 
-            if ((tk.id == OP_tk) && (operator_map[tk.value] == "equalTk")) {
+            node->c1 = exp();
+            
+            //check for ;
+            if ((tk.id == OP_tk) && (operator_map[tk.value] == "semiColonTk")) {
                 nextScan();
-                node->c1 = exp(); // Parse the expression
                 return node;
             } else {
-                expectedToken.assign("=");
+                expectedToken.assign(";");
                 parserError();
             }
         } else {
@@ -513,6 +576,7 @@ NodeT* Parser::assign() {
         parserError();
     }
     exit(EXIT_FAILURE);
+
 }
 
 // <R0> -> <<(onetoken) | >> (one token) | < | >| = | %
