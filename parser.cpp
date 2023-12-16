@@ -330,18 +330,19 @@ NodeT* Parser::stat() {
                 node->c1 = assign();
             } else if (tk.data == "xloop") {
                 node->c1 = loop();
-            } else if (tk.data == "{") {
-                node->c1 = block();
             } else {
                 expectedToken.assign("statement");
                 parserError();
                 exit(EXIT_FAILURE);
             }
-        } else {
+    } else if ((tk.id == OP_tk) && (operator_map[tk.value] == "leftCurlyTk")) {
+        node->c1 = block();
+        return node;
+    } else {
             expectedToken.assign("Staaatement");
             parserError();
             exit(EXIT_FAILURE);
-        }
+    }
         return node;
 }
 
