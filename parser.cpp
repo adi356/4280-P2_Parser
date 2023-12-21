@@ -319,6 +319,7 @@ NodeT* Parser::stat() {
     // }
     
     // return node;
+    // TODO: still issue with stat
     if (tk.id == KW_tk) {
             if (tk.data == "xin") {
                 node->c1 = in();
